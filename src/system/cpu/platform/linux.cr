@@ -8,20 +8,24 @@ module System
 
     @@processors_cache : Array(Processor)? = nil
 
+    # Returns a Processor wrapper for each parsed /proc/cpuinfo record.
     def processors : Array(Processor)
       cached_processors.dup
     end
 
+    # Yields each parsed processor record without exposing the internal cache directly.
     def processors(& : Processor ->) : Nil
       cached_processors.each do |processor|
         yield processor
       end
     end
 
+    # Returns the number of logical CPUs described by /proc/cpuinfo.
     def num_cpu : Int32
       cached_processors.size
     end
 
+    # Maps Linux cpu_family values to the Ruby gem's legacy architecture names.
     def architecture : String
       case self["cpu_family"]?.try(&.to_s)
       when "3"
@@ -39,20 +43,24 @@ module System
       end
     end
 
+    # Returns the best available model string from common /proc/cpuinfo keys.
     def model : String
       string_attribute("model_name", "model", "cpu", "processor")
     end
 
+    # Returns CPU frequency in MHz.
     def freq : Int32
       self["cpu_mhz"]?.try(&.to_s.to_f.round.to_i) || 0
     end
 
+    # Returns the 1, 5, and 15 minute load averages.
     def load_avg : Array(Float64)
       File.read(LOAD_AVG_PATH).split[0, 3].map(&.to_f)
     rescue ex
       raise Error.new("Unable to read #{LOAD_AVG_PATH}: #{ex.message}")
     end
 
+    # Reads raw jiffy counters from /proc/stat for total and per-CPU entries.
     def cpu_stats : Hash(String, Array(Int64))
       stats = {} of String => Array(Int64)
       lines = File.read_lines(CPU_STAT_PATH)
@@ -74,6 +82,7 @@ module System
       raise Error.new("Unable to read #{CPU_STAT_PATH}: #{ex.message}")
     end
 
+    # Samples /proc/stat twice and converts the delta into a percentage.
     def cpu_usage(*, sample_time : Number? = 1.0, samples : Int? = 2) : Float64?
       sample_time_value = sample_time && sample_time > 0 ? sample_time.to_f : 1.0
       samples_value = samples && samples > 0 ? samples : 2
@@ -109,19 +118,23 @@ module System
       nil
     end
 
+    # Returns a parsed cpuinfo field from the requested processor index.
     def [](name : String, cpu_index : Int = 0) : AttributeValue
       processor = cached_processors[cpu_index]? || raise IndexError.new("No CPU at index #{cpu_index}")
       processor.fetch_attribute(name)
     end
 
+    # Returns a parsed cpuinfo field when present, otherwise nil.
     def []?(name : String, cpu_index : Int = 0) : AttributeValue?
       cached_processors[cpu_index]?.try(&.[]?(name))
     end
 
+    # Lazily parses /proc/cpuinfo once per process.
     private def cached_processors : Array(Processor)
       @@processors_cache ||= load_processors
     end
 
+    # Splits /proc/cpuinfo into one hash per processor, normalizing keys as we go.
     private def load_processors : Array(Processor)
       records = [] of Processor
       current = {} of String => AttributeValue
@@ -147,10 +160,12 @@ module System
       raise Error.new("Unable to parse #{CPU_INFO_PATH}: #{ex.message}")
     end
 
+    # Matches the Ruby gem's lowercase underscore-separated field names.
     private def normalize_key(key : String) : String
       key.strip.downcase.gsub(/\s+/, "_")
     end
 
+    # Converts yes/no flags to booleans and preserves everything else as strings.
     private def normalize_value(value : String?) : AttributeValue
       normalized = value.to_s.strip
 
@@ -166,6 +181,7 @@ module System
       end
     end
 
+    # Returns the first non-empty string value among the candidate cpuinfo fields.
     private def string_attribute(*names : String) : String
       names.each do |name|
         value = self[name]?

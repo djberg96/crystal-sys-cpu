@@ -25,18 +25,22 @@ module System
 
     @@hardware_overview : Hash(String, String)? = nil
 
+    # Returns the machine architecture string, such as "arm64".
     def architecture : String
       read_string_sysctl("hw.machine")
     end
 
+    # Darwin exposes the machine class through the same sysctl we use for architecture.
     def machine : String
       read_string_sysctl("hw.machine")
     end
 
+    # Returns the number of logical CPUs reported by the kernel.
     def num_cpu : Int32
       read_scalar_sysctl("hw.ncpu", Int32)
     end
 
+    # Returns the most descriptive CPU or chip name that macOS will give us.
     def model : String
       brand = read_optional_string_sysctl("machdep.cpu.brand_string")
       return brand unless brand.empty?
@@ -58,6 +62,7 @@ module System
       end
     end
 
+    # Returns CPU frequency in MHz when the platform exposes it.
     def freq : Int32?
       hz = read_optional_scalar_sysctl("hw.cpufrequency", Int64)
       return (hz / 1_000_000).to_i if hz && hz > 0
@@ -74,6 +79,7 @@ module System
       nil
     end
 
+    # Returns the 1, 5, and 15 minute load averages.
     def load_avg : Array(Float64)
       values = Pointer(Float64).malloc(3_u64)
       result = SystemCPUDarwin.getloadavg(values, 3)
@@ -82,6 +88,7 @@ module System
       [values[0], values[1], values[2]]
     end
 
+    # Samples CPU ticks over time and converts the deltas into a usage percentage.
     def cpu_usage(*, sample_time : Number? = 1.0, samples : Int? = 2) : Float64?
       sample_time_value = sample_time && sample_time > 0 ? sample_time.to_f : 1.0
       samples_value = samples && samples > 0 ? samples : 2
@@ -113,6 +120,7 @@ module System
       nil
     end
 
+    # Reads aggregate CPU tick counters from Mach host statistics.
     private def current_ticks : Array(UInt32)
       host = SystemCPUDarwin.mach_host_self
       info = StaticArray(UInt32, HOST_CPU_LOAD_INFO_COUNT).new(0_u32)
@@ -123,6 +131,7 @@ module System
       info.to_a
     end
 
+    # Used only for the ARM fallback frequency calculation.
     private def read_clock_info? : SystemCPUDarwin::ClockInfo?
       clock = uninitialized SystemCPUDarwin::ClockInfo
       size = LibC::SizeT.new(sizeof(SystemCPUDarwin::ClockInfo))
@@ -132,6 +141,7 @@ module System
       clock
     end
 
+    # Raises when a required sysctl string is missing.
     private def read_string_sysctl(name : String) : String
       value = read_optional_string_sysctl(name)
       return value unless value.empty?
@@ -139,6 +149,7 @@ module System
       raise Error.new("sysctlbyname failed for #{name}")
     end
 
+    # Performs the two-step sysctl read needed for variable-length strings.
     private def read_optional_string_sysctl(name : String) : String
       size = LibC::SizeT.new(0)
       return "" unless SystemCPUDarwin.sysctlbyname(name, Pointer(Void).null, pointerof(size), Pointer(Void).null, 0) == 0
@@ -152,6 +163,7 @@ module System
       String.new(buffer.to_unsafe, used)
     end
 
+    # Raises when a required fixed-size sysctl value is missing.
     private def read_scalar_sysctl(name : String, type : T.class) : T forall T
       value = read_optional_scalar_sysctl(name, type)
       return value if value
@@ -159,6 +171,7 @@ module System
       raise Error.new("sysctlbyname failed for #{name}")
     end
 
+    # Reads typed sysctl scalars such as Int32 and Int64 values.
     private def read_optional_scalar_sysctl(name : String, type : T.class) : T? forall T
       value = uninitialized T
       size = LibC::SizeT.new(sizeof(T))
@@ -166,6 +179,7 @@ module System
       result == 0 ? value : nil
     end
 
+    # Caches a small subset of system_profiler output for human-friendly chip names.
     private def hardware_overview : Hash(String, String)
       @@hardware_overview ||= begin
         output = IO::Memory.new

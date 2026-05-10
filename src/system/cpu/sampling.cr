@@ -1,5 +1,6 @@
 module System
   module CPU
+    # Uses libc nanosleep directly so sampling works in both compiled code and `ic`.
     private def blocking_sleep(seconds : Float64) : Nil
       span = seconds.seconds
       req = uninitialized LibC::Timespec
