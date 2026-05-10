@@ -88,7 +88,26 @@ module System
       [values[0], values[1], values[2]]
     end
 
-    # Samples CPU ticks over time and converts the deltas into a usage percentage.
+    # Returns the current CPU usage as a percentage, averaged over a sampling interval.
+    #
+    # By default, this method samples CPU usage over a 1-second interval and
+    # averages two measurements. You can customize the interval and number of
+    # samples by passing the `sample_time` (in seconds) and `samples` keyword
+    # arguments. For example, `cpu_usage(sample_time: 0.5, samples: 4)` takes
+    # four samples, each 0.5 seconds apart, and returns the average CPU usage
+    # over that period.
+    #
+    # Passing `nil`, `0`, or a negative value for either argument falls back to
+    # the defaults (`1.0` seconds and `2` samples) to keep behavior consistent
+    # across platforms.
+    #
+    # Returns a `Float64` percentage rounded to one decimal place, or `nil` if
+    # CPU usage cannot be determined.
+    #
+    # Example usage:
+    #   System::CPU.cpu_usage                               # => 12.3
+    #   System::CPU.cpu_usage(sample_time: 2, samples: 3)  # => 10.7
+    #   System::CPU.cpu_usage(sample_time: 0, samples: 0)  # => 12.3
     def cpu_usage(*, sample_time : Number? = 1.0, samples : Int? = 2) : Float64?
       sample_time_value = sample_time && sample_time > 0 ? sample_time.to_f : 1.0
       samples_value = samples && samples > 0 ? samples : 2
