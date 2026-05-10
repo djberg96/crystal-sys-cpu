@@ -89,7 +89,7 @@ module System
 
       samples_value.times do
         before = current_ticks
-        sleep sample_time_value.seconds
+        blocking_sleep(sample_time_value)
         after = current_ticks
 
         total_diff = 0.0

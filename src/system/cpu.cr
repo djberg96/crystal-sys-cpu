@@ -2,6 +2,7 @@ require "./cpu/version"
 require "./cpu/error"
 require "./cpu/types"
 require "./cpu/processor"
+require "./cpu/sampling"
 
 {% if flag?(:linux) %}
   require "./cpu/platform/linux"

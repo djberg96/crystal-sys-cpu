@@ -81,7 +81,7 @@ module System
 
       samples_value.times do
         before = cpu_stats
-        sleep sample_time_value.seconds
+        blocking_sleep(sample_time_value)
         after = cpu_stats
 
         total_diff = 0.0
