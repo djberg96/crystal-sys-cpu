@@ -1,6 +1,6 @@
 # crystal-sys-cpu
 
-A Crystal port of Daniel J. Berger's `sys-cpu` library that exposes CPU details under `System::CPU`.
+A Crystal port of my `sys-cpu` Ruby library that exposes CPU details under `System::CPU`.
 
 ## Status
 
@@ -60,3 +60,6 @@ pp first.vendor_id
 
 - `System::CPU` is a module instead of a class, which fits Crystal better and avoids colliding with Crystal's existing `System` namespace.
 - On macOS, `freq` returns `nil` if the platform does not expose CPU frequency through the available system APIs.
+
+## Author
+Daniel J. Berger
