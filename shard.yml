@@ -1,0 +1,9 @@
+name: system-cpu
+version: 0.1.0
+
+authors:
+  - Daniel J. Berger
+
+crystal: ">= 1.10.0"
+
+license: Apache-2.0
