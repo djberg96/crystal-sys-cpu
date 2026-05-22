@@ -15,7 +15,7 @@ require "./spec_helper"
     end
 
     it "samples cpu usage" do
-      usage = System::CPU.cpu_usage(sample_time: 0.1, samples: 1)
+      usage = System::CPU.cpu_usage(sample_time: 0.25, samples: 2)
       usage.should_not be_nil
       usage.not_nil!.should be >= 0
       usage.not_nil!.should be <= 100
