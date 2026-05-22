@@ -8,8 +8,9 @@ This first Crystal port currently includes:
 
 - Linux support via `/proc/cpuinfo`, `/proc/stat`, and `/proc/loadavg`
 - macOS support via native libc and Mach calls, with a small `system_profiler` fallback for model names
+- FreeBSD support via `sysctl` and `getloadavg`
 
-Windows and the broader BSD/Solaris surface from the Ruby gem are not ported yet.
+Windows and the remaining BSD/Solaris surface from the Ruby gem are not ported yet.
 
 ## Installation
 
@@ -60,6 +61,7 @@ pp first.vendor_id
 
 - `System::CPU` is a module instead of a class, which fits Crystal better and avoids colliding with Crystal's existing `System` namespace.
 - On macOS, `freq` returns `nil` if the platform does not expose CPU frequency through the available system APIs.
+- On FreeBSD, `freq` prefers `dev.cpu.0.freq` and falls back to `hw.clockrate` when available.
 
 ## Author
 Daniel J. Berger

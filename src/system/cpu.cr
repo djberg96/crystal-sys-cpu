@@ -8,6 +8,8 @@ require "./cpu/sampling"
   require "./cpu/platform/linux"
 {% elsif flag?(:darwin) %}
   require "./cpu/platform/darwin"
+{% elsif flag?(:freebsd) %}
+  require "./cpu/platform/freebsd"
 {% else %}
   require "./cpu/platform/unsupported"
 {% end %}
